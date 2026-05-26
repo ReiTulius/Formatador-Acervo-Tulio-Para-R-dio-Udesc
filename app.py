@@ -3,21 +3,21 @@ import requests
 import re
 from datetime import datetime
 
-# Configuração da página
 st.set_page_config(page_title="Automação de Acervo - Udesc FM", page_icon="💿", layout="centered")
 
 st.title("💿 Automatizador de Acervo - Tulio Para Udesc FM")
 st.markdown("Insira a lista de músicas baixadas para cadastrar diretamente no Google Sheets de forma 100% gratuita.")
 
-# 🔗 COLOQUE A SUA URL ATUALIZADA DO APPS SCRIPT AQUI
-URL_ENVIO_GOOGLE = "https://script.google.com/macros/s/AKfycbzrmUS2n2dGgNFa5Q18hF7J1PrJMCAxdkVTpL_YKIUn7upwm8JeyAdyQuTH0n8vnvZj/exec"
+# 🔗 COLOQUE A SUA URL DO APPS SCRIPT AQUI
+URL_ENVIO_GOOGLE = "COLE_AQUI_A_URL_DO_APPS_SCRIPT"
 
 def processar_linha_musica(linha_bruta):
-    linha_bruta = linha_bruta.strip().replace('"', '') 
-    if not linha_bruta:
+    linha_bruta = \
+linha_bruta.strip().replace('"', '') 
+    if not \
+linha_bruta:
         return None
         
-    # 🧹 LIMPEZA: Remove o caminho da pasta e o .mp3 do final
     if "\\" in linha_bruta:
         linha_bruta = linha_bruta.split("\\")[-1]
     if linha_bruta.lower().endswith(".mp3"):
@@ -30,7 +30,6 @@ def processar_linha_musica(linha_bruta):
     ano = ""
     compositores = ""
     
-    # 1. Isola os Compositores se existirem
     padrao_comp = r'\((comp\.|compa)[^)]+\)'
     busca_comp = re.search(padrao_comp, linha_bruta, flags=re.IGNORECASE)
     
@@ -41,7 +40,6 @@ def processar_linha_musica(linha_bruta):
     else:
         linha_trabalho = linha_bruta
 
-    # 2. Divide a linha pelos hífens
     partes = [p.strip() for p in linha_trabalho.split(" - ")]
     
     if len(partes) < 2:
@@ -59,7 +57,8 @@ def processar_linha_musica(linha_bruta):
         indice_atual += 1
         
     if indice_atual < len(partes):
-        if indice_atual == len(partes) - 1 and partes[indice_atual].isdigit():
+        if indice_atual == len(partes) - 1 and \
+partes[indice_atual].isdigit():
             pass
         else:
             formato = partes[indice_atual]
@@ -68,7 +67,6 @@ def processar_linha_musica(linha_bruta):
     if len(partes) > indice_atual and partes[-1].isdigit():
         ano = partes[-1]
 
-    # 3. Montagem do Nome do Arquivo Formatado
     part_str = f" - (part. {participacao})" if participacao else ""
     comp_str = f" (comp. {compositores})" if compositores else " (comp. )"
     formato_str = f" - {formato}" if formato else ""
@@ -83,7 +81,6 @@ def processar_linha_musica(linha_bruta):
         participacao, nome_arquivo_formatado
     ]
 
-# Interface do usuário
 if URL_ENVIO_GOOGLE == "COLE_AQUI_A_URL_DO_APPS_SCRIPT" or not URL_ENVIO_GOOGLE:
     st.error("⚠️ Configuração incompleta: Insira a URL do Apps Script no código.")
 else:
@@ -100,14 +97,22 @@ else:
                     pacote_dados.append(dados_linha)
             
             if pacote_dados:
-                with st.spinner(f"Enviando {len(pacote_dados)} músicas diretamente para o Sheets..."):
-                    resposta = requests.post(URL_ENVIO_GOOGLE, json=pacote_dados)
-                    if resposta.status_code == 200 and resposta.text == "Sucesso":
-                        st.success(f"🎉 Alvo atingido! {len(pacote_dados)} músicas foram adicionadas com sucesso logo após o seu último cadastro!")
-                        st.balloons()
-                    else:
-                        st.error("Erro ao enviar dados para o Google Sheets.")
+                with st.spinner(f"Verificando duplicados e enviando {len(pacote_dados)} músicas..."):
+                    try:
+                        resposta = requests.post(URL_ENVIO_GOOGLE, json=pacote_dados)
+                        if resposta.status_code == 200:
+                            res_json = resposta.json()
+                            inseridos = res_json.get("inseridos", 0)
+                            ignorados = res_json.get("ignorados", 0)
+                            
+                            if inseridos > 0:
+                                st.success(f"🎉 Sucesso! {inseridos} nova(s) música(s) foram cadastradas no acervo!")
+                            if ignorados > 0:
+                                st.warning(f"⚠️ {ignorados} música(s) foram ignoradas por já existirem na planilha.")
+                            st.balloons()
+                        else:
+                            st.error(f"O Google Sheets retornou um erro. Status: {resposta.status_code}")
+                    except Exception as e:
+                        st.error(f"Erro ao processar resposta do servidor: {e}")
             else:
                 st.warning("Nenhuma linha enviada estava no padrão correto.")
-        else:
-            st.warning("Por favor, cole os dados antes de clicar.")
