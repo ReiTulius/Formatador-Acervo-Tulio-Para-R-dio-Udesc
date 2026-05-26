@@ -6,7 +6,7 @@ from datetime import datetime
 # Configuração da página do aplicativo
 st.set_page_config(page_title="Automatizador de Acervo - Udesc FM", page_icon="💿", layout="wide")
 
-st.title("💿 Automatizador de Acervo - Tulio Para Udesc FM")
+st.title("💿 Automatizador de Acervo Para Udesc FM")
 st.markdown("Insira a lista de músicas para limpar, formatar e copiar direto para o Google Sheets sem travamentos.")
 
 def processar_linha_musica(linha_bruta):
