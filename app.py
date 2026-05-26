@@ -6,7 +6,7 @@ from datetime import datetime
 # Configuração da página do aplicativo
 st.set_page_config(page_title="Automatizador de Acervo - Udesc FM", page_icon="💿", layout="wide")
 
-st.title("💿 Automatizador de Acervo Para Udesc FM")
+st.title("💿 Automatizador de Acervo - Tulio Para Udesc FM")
 st.markdown("Insira a lista de músicas para limpar, formatar e copiar direto para o Google Sheets sem travamentos.")
 
 def processar_linha_musica(linha_bruta):
@@ -77,7 +77,7 @@ def processar_linha_musica(linha_bruta):
     # Retorna exatamente na ordem das colunas da sua planilha (Colunas A até N)
     return {
         "Música": musica,
-        "Artista": artist,
+        "Artista": artista,
         "Compositores": compositores,
         "Formato": formato,
         "Ano": ano,
@@ -102,27 +102,3 @@ if st.button("Processar e Formatar Linhas 🚀", type="primary"):
         for linha in linhas:
             dados_linha = processar_linha_musica(linha)
             if dados_linha:
-                lista_resultados.append(dados_linha)
-        
-        if lista_resultados:
-            df = pd.DataFrame(lista_resultados)
-            
-            # Remove duplicados da lista atual que você acabou de colar
-            df.drop_duplicates(subset=["Nome do Arquivo"], keep="first", inplace=True)
-            
-            st.success(f"🎉 Pronto! {len(df)} músicas limpas e formatadas instantaneamente!")
-            
-            st.markdown("### 📋 Como colocar na sua Planilha:")
-            st.markdown("""
-            1. Passe o mouse sobre a tabela abaixo.
-            2. Clique no pequeno ícone de **Download (como CSV)** que aparece no canto superior direito da tabela ou simplesmente selecione os dados clicando e arrastando.
-            3. Abra no Google Sheets e use **Ctrl + V** na primeira coluna vazia (logo abaixo da sua última música).
-            """)
-            
-            # Exibe a tabela organizada na tela de forma ultra-rápida
-            st.dataframe(df, use_container_width=True)
-            st.balloons()
-        else:
-            st.warning("Nenhuma linha válida encontrada no padrão.")
-    else:
-        st.warning("Cole os dados antes de processar.")
