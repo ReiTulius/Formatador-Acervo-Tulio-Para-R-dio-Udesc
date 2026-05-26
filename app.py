@@ -102,3 +102,27 @@ if st.button("Processar e Formatar Linhas 🚀", type="primary"):
         for linha in linhas:
             dados_linha = processar_linha_musica(linha)
             if dados_linha:
+                lista_resultados.append(dados_linha)
+        
+        if lista_resultados:
+            df = pd.DataFrame(lista_resultados)
+            
+            # Remove duplicados da lista atual que você acabou de colar
+            df.drop_duplicates(subset=["Nome do Arquivo"], keep="first", inplace=True)
+            
+            st.success(f"🎉 Pronto! {len(df)} músicas limpas e formatadas instantaneamente!")
+            
+            st.markdown("### 📋 Como colocar na sua Planilha:")
+            st.markdown("""
+            1. Passe o mouse sobre a tabela abaixo.
+            2. Clique no pequeno ícone de **Download (como CSV)** que aparece no canto superior direito da tabela ou simplesmente selecione as linhas clicando e arrastando.
+            3. Abra o arquivo ou use **Ctrl + C** na tabela e **Ctrl + V** na sua planilha do Google na primeira coluna vazia (linha 4230).
+            """)
+            
+            # Exibe a tabela organizada na tela de forma ultra-rápida
+            st.dataframe(df, use_container_width=True)
+            st.balloons()
+        else:
+            st.warning("Nenhuma linha válida encontrada no padrão.")
+    else:
+        st.warning("Cole os dados antes de processar.")
