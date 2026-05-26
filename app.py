@@ -87,4 +87,43 @@ def processar_linha_musica(linha_bruta):
         "Gênero Relacionado": "",
         "Idioma": "",
         "Classificação": "",
-        "Andamento
+        "Andamento": "",
+        "Data Cadastro": datetime.now().strftime("%d/%m/%Y"),
+        "Participações": participacao,
+        "Nome do Arquivo": nome_arquivo_formatado
+    }
+
+texto_bruto = st.text_area("Cole aqui as linhas brutas das músicas baixadas:", height=250, placeholder="M:\\...")
+
+if st.button("Processar e Formatar Linhas 🚀", type="primary"):
+    if texto_bruto:
+        linhas = texto_bruto.split('\n')
+        lista_resultados = []
+        
+        for linha in linhas:
+            dados_linha = processar_linha_musica(linha)
+            if dados_linha:
+                lista_resultados.append(dados_linha)
+        
+        if lista_resultados:
+            df = pd.DataFrame(lista_resultados)
+            
+            # Remove duplicados da lista atual que você acabou de colar
+            df.drop_duplicates(subset=["Nome do Arquivo"], keep="first", inplace=True)
+            
+            st.success(f"🎉 Pronto! {len(df)} músicas limpas e formatadas com sucesso!")
+            
+            st.markdown("### 📋 Como colocar na sua Planilha:")
+            st.markdown("""
+            1. Clique em cima de qualquer célula da tabela abaixo.
+            2. Use **Ctrl + A** (para selecionar tudo) e depois **Ctrl + C** (para copiar).
+            3. Vá na sua planilha do Google Sheets, clique na célula **A4230** (ou na sua primeira linha vazia) e use **Ctrl + V**.
+            """)
+            
+            # Exibe a tabela organizada na tela de forma ultra-rápida
+            st.dataframe(df, use_container_width=True)
+            st.balloons()
+        else:
+            st.warning("Nenhuma linha válida encontrada no padrão.")
+    else:
+        st.warning("Cole os dados antes de processar.")
