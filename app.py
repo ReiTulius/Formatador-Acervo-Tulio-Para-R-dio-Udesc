@@ -9,13 +9,19 @@ st.set_page_config(page_title="Automação de Acervo - Som da Ilha", page_icon="
 st.title("💿 Automatizador de Acervo - Som da Ilha")
 st.markdown("Insira a lista de músicas baixadas para cadastrar diretamente no Google Sheets de forma 100% gratuita.")
 
-# 🔗 COLE AQUI A URL DO APLICATIVO WEB QUE VOCÊ COPIOU NO PASSO 1
-URL_ENVIO_GOOGLE = "https://script.google.com/macros/s/AKfycbz0kAafkah84I03N_o9pVB0zRPMQnhm_wOZxrak91Gqvxb3WYHG47sU-awFruLk8X2U/exec"
+# 🔗 SEU LINK DO APPS SCRIPT AQUI
+URL_ENVIO_GOOGLE = "https://script.google.com/macros/s/AKfycbx-Nv65ez9FGmbze1vcrrkaDYnxoClH3-9AjDEHYgkj7oiMcc3ahXxsppvwuwckTgCG/exec"
 
 def processar_linha_musica(linha_bruta):
-    linha_bruta = linha_bruta.strip()
+    linha_bruta = linha_bruta.strip().replace('"', '') # Remove aspas se houver
     if not linha_bruta:
         return None
+        
+    # 🔥 NOVA LIMPEZA: Se vier com caminho de pasta (M:\...\) ou extensão (.mp3), limpa tudo
+    if "\\" in linha_bruta:
+        linha_bruta = linha_bruta.split("\\")[-1] # Pega só o final após a última barra
+    if linha_bruta.lower().endswith(".mp3"):
+        linha_bruta = linha_bruta[:-4] # Remove o .mp3 do final
         
     artista = ""
     participacao = ""
@@ -71,7 +77,6 @@ def processar_linha_musica(linha_bruta):
     nome_arquivo_formatado = f"{artista}{part_str} {musica}{comp_str}{formato_str}{ano_str}"
     nome_arquivo_formatado = re.sub(r'\s+', ' ', nome_arquivo_formatado).strip()
 
-    # Retorna na ordem exata das colunas da planilha (A até N)
     return [
         musica, artista, compositores, formato, ano,
         "", "", "", "", "", "", datetime.now().strftime("%d/%m/%Y"), 
@@ -80,33 +85,28 @@ def processar_linha_musica(linha_bruta):
 
 # Interface do usuário
 if URL_ENVIO_GOOGLE == "COLE_AQUI_A_URL_DO_APPS_SCRIPT" or not URL_ENVIO_GOOGLE:
-    st.error("⚠️ Configuração incompleta: Insira a URL do Apps Script na linha 11 do código.")
+    st.error("⚠️ Configuração incompleta: Insira a URL do Apps Script no código.")
 else:
-    texto_bruto = st.text_area("Cole aqui as linhas brutas das músicas baixadas (uma por linha):", height=250, 
-                               placeholder="Exemplo:\n5 a Seco - (part. Maria Gadù) - Em Paz - Álbum Nós - 2013")
+    texto_bruto = st.text_area("Cole aqui as linhas brutas das músicas:", height=250)
 
     if st.button("Lançar Músicas no Acervo 🚀", type="primary"):
         if texto_bruto:
             linhas = texto_bruto.split('\n')
-            sucessos = 0
+            pacote_dados = []
             
-            barra_progresso = st.progress(0)
-            
-            for i, linha in enumerate(linhas):
+            for linha in linhas:
                 dados_linha = processar_linha_musica(linha)
                 if dados_linha:
-                    # Envia linha por linha para o script do Google de forma totalmente segura
-                    resposta = requests.post(URL_ENVIO_GOOGLE, json=dados_linha)
-                    if resposta.status_code == 200:
-                        sucessos += 1
-                
-                # Atualiza a barra visualmente
-                barra_progresso.progress((i + 1) / len(linhas))
+                    pacote_dados.append(dados_linha)
             
-            if sucessos > 0:
-                st.success(f"🎉 Alvo atingido! {sucessos} música(s) foram enviadas diretamente para a sua planilha do Google Sheets!")
-                st.balloons()
+            if pacote_dados:
+                with st.spinner(f"Enviando lote de {len(pacote_dados)} músicas instantaneamente..."):
+                    # Envia TODAS as linhas de uma vez só!
+                    resposta = requests.post(URL_ENVIO_GOOGLE, json=pacote_dados)
+                    if resposta.status_code == 200:
+                        st.success(f"🎉 Alvo atingido! {len(pacote_dados)} músicas foram cadastradas de uma vez só!")
+                        st.balloons()
+                    else:
+                        st.error("Erro ao enviar dados para o Google Sheets.")
             else:
                 st.warning("Nenhuma linha enviada estava no padrão correto.")
-        else:
-            st.warning("Por favor, cole os dados antes de clicar.")
