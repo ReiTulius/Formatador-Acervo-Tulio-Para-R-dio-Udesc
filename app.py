@@ -9,7 +9,7 @@ st.title("💿 Automatizador de Acervo - Tulio Para Udesc FM")
 st.markdown("Insira a lista de músicas baixadas para cadastrar diretamente no Google Sheets de forma 100% gratuita.")
 
 # 🔗 COLOQUE A SUA URL DO APPS SCRIPT AQUI
-URL_ENVIO_GOOGLE = "COLE_AQUI_A_URL_DO_APPS_SCRIPT"
+URL_ENVIO_GOOGLE = "https://script.google.com/macros/s/AKfycbzrmUS2n2dGgNFa5Q18hF7J1PrJMCAxdkVTpL_YKIUn7upwm8JeyAdyQuTH0n8vnvZj/exec"
 
 def processar_linha_musica(linha_bruta):
     linha_bruta = \
