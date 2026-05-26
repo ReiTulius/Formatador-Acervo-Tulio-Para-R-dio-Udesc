@@ -1,23 +1,20 @@
 import streamlit as st
-import requests
+import pandas as pd
 import re
 from datetime import datetime
 
-st.set_page_config(page_title="Automação de Acervo - Udesc FM", page_icon="💿", layout="centered")
+# Configuração da página do aplicativo
+st.set_page_config(page_title="Automatizador de Acervo - Udesc FM", page_icon="💿", layout="wide")
 
-st.title("💿 Automatizador de Acervo - Tulio Para Udesc FM")
-st.markdown("Insira a lista de músicas baixadas para cadastrar diretamente no Google Sheets de forma 100% gratuita.")
-
-# 🔗 COLOQUE A SUA URL DO APPS SCRIPT AQUI
-URL_ENVIO_GOOGLE = "https://script.google.com/macros/s/AKfycbza8eiYhuuvNHiC0ifV3tjz1D2XEvcu8p1eXLXq8RHkimpfJFXaY3cZUoEBzwx6xgZm/exec"
+st.title("💿 Automatizador de Acervo Para Udesc FM")
+st.markdown("Insira a lista de músicas para limpar, formatar e copiar direto para o Google Sheets sem travamentos.")
 
 def processar_linha_musica(linha_bruta):
-    linha_bruta = \
-linha_bruta.strip().replace('"', '') 
-    if not \
-linha_bruta:
+    linha_bruta = linha_bruta.strip().replace('"', '') 
+    if not linha_bruta:
         return None
         
+    # 🧹 LIMPEZA: Remove o caminho da pasta e o .mp3 do final
     if "\\" in linha_bruta:
         linha_bruta = linha_bruta.split("\\")[-1]
     if linha_bruta.lower().endswith(".mp3"):
@@ -30,6 +27,7 @@ linha_bruta:
     ano = ""
     compositores = ""
     
+    # 1. Isola os Compositores se existirem
     padrao_comp = r'\((comp\.|compa)[^)]+\)'
     busca_comp = re.search(padrao_comp, linha_bruta, flags=re.IGNORECASE)
     
@@ -40,6 +38,7 @@ linha_bruta:
     else:
         linha_trabalho = linha_bruta
 
+    # 2. Divide a linha pelos hífens
     partes = [p.strip() for p in linha_trabalho.split(" - ")]
     
     if len(partes) < 2:
@@ -57,8 +56,7 @@ linha_bruta:
         indice_atual += 1
         
     if indice_atual < len(partes):
-        if indice_atual == len(partes) - 1 and \
-partes[indice_atual].isdigit():
+        if indice_atual == len(partes) - 1 and partes[indice_atual].isdigit():
             pass
         else:
             formato = partes[indice_atual]
@@ -67,6 +65,7 @@ partes[indice_atual].isdigit():
     if len(partes) > indice_atual and partes[-1].isdigit():
         ano = partes[-1]
 
+    # 3. Montagem do Nome do Arquivo Formatado
     part_str = f" - (part. {participacao})" if participacao else ""
     comp_str = f" (comp. {compositores})" if compositores else " (comp. )"
     formato_str = f" - {formato}" if formato else ""
@@ -75,44 +74,55 @@ partes[indice_atual].isdigit():
     nome_arquivo_formatado = f"{artista}{part_str} {musica}{comp_str}{formato_str}{ano_str}"
     nome_arquivo_formatado = re.sub(r'\s+', ' ', nome_arquivo_formatado).strip()
 
-    return [
-        musica, artista, compositores, formato, ano,
-        "", "", "", "", "", "", datetime.now().strftime("%d/%m/%Y"), 
-        participacao, nome_arquivo_formatado
-    ]
+    # Retorna exatamente na ordem das colunas da sua planilha (Colunas A até N)
+    return {
+        "Música": musica,
+        "Artista": artist,
+        "Compositores": compositores,
+        "Formato": formato,
+        "Ano": ano,
+        "Origem": "",
+        "Gênero": "",
+        "Gênero Relacionado": "",
+        "Idioma": "",
+        "Classificação": "",
+        "Andamento": "",
+        "Data Cadastro": datetime.now().strftime("%d/%m/%Y"),
+        "Participações": participacao,
+        "Nome do Arquivo": nome_arquivo_formatado
+    }
 
-if URL_ENVIO_GOOGLE == "COLE_AQUI_A_URL_DO_APPS_SCRIPT" or not URL_ENVIO_GOOGLE:
-    st.error("⚠️ Configuração incompleta: Insira a URL do Apps Script no código.")
-else:
-    texto_bruto = st.text_area("Cole aqui as linhas brutas das músicas:", height=250)
+texto_bruto = st.text_area("Cole aqui as linhas brutas das músicas baixadas:", height=250, placeholder="M:\\...")
 
-    if st.button("Lançar Músicas no Acervo 🚀", type="primary"):
-        if texto_bruto:
-            linhas = texto_bruto.split('\n')
-            pacote_dados = []
+if st.button("Processar e Formatar Linhas 🚀", type="primary"):
+    if texto_bruto:
+        linhas = texto_bruto.split('\n')
+        lista_resultados = []
+        
+        for linha in linhas:
+            dados_linha = processar_linha_musica(linha)
+            if dados_linha:
+                lista_resultados.append(dados_linha)
+        
+        if lista_resultados:
+            df = pd.DataFrame(lista_resultados)
             
-            for linha in linhas:
-                dados_linha = processar_linha_musica(linha)
-                if dados_linha:
-                    pacote_dados.append(dados_linha)
+            # Remove duplicados da lista atual que você acabou de colar
+            df.drop_duplicates(subset=["Nome do Arquivo"], keep="first", inplace=True)
             
-            if pacote_dados:
-                with st.spinner(f"Verificando duplicados e enviando {len(pacote_dados)} músicas..."):
-                    try:
-                        resposta = requests.post(URL_ENVIO_GOOGLE, json=pacote_dados)
-                        if resposta.status_code == 200:
-                            res_json = resposta.json()
-                            inseridos = res_json.get("inseridos", 0)
-                            ignorados = res_json.get("ignorados", 0)
-                            
-                            if inseridos > 0:
-                                st.success(f"🎉 Sucesso! {inseridos} nova(s) música(s) foram cadastradas no acervo!")
-                            if ignorados > 0:
-                                st.warning(f"⚠️ {ignorados} música(s) foram ignoradas por já existirem na planilha.")
-                            st.balloons()
-                        else:
-                            st.error(f"O Google Sheets retornou um erro. Status: {resposta.status_code}")
-                    except Exception as e:
-                        st.error(f"Erro ao processar resposta do servidor: {e}")
-            else:
-                st.warning("Nenhuma linha enviada estava no padrão correto.")
+            st.success(f"🎉 Pronto! {len(df)} músicas limpas e formatadas instantaneamente!")
+            
+            st.markdown("### 📋 Como colocar na sua Planilha:")
+            st.markdown("""
+            1. Passe o mouse sobre a tabela abaixo.
+            2. Clique no pequeno ícone de **Download (como CSV)** que aparece no canto superior direito da tabela ou simplesmente selecione os dados clicando e arrastando.
+            3. Abra no Google Sheets e use **Ctrl + V** na primeira coluna vazia (logo abaixo da sua última música).
+            """)
+            
+            # Exibe a tabela organizada na tela de forma ultra-rápida
+            st.dataframe(df, use_container_width=True)
+            st.balloons()
+        else:
+            st.warning("Nenhuma linha válida encontrada no padrão.")
+    else:
+        st.warning("Cole os dados antes de processar.")
