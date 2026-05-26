@@ -81,7 +81,7 @@ def processar_linha_musica(linha_bruta):
     if len(partes) > indice_atual and partes[-1].isdigit():
         ano = partes[-1]
 
-    # 3. Montagem do Nome do Arquivo Formatado (Coluna N / O)
+    # 3. Montagem do Nome do Arquivo Formatado
     part_str = f" - (part. {participacao})" if participacao else ""
     comp_str = f" (comp. {compositores})" if compositores else ""
     formato_str = f" - {formato}" if formato else ""
@@ -102,7 +102,7 @@ def processar_linha_musica(linha_bruta):
         "Origem": "",
         "Gênero": "",
         "Gênero Relacionado": "",
-        "Est/Idioma": "SC" if eh_sc else "", # Guardamos aqui temporariamente
+        "Est/Idioma": "SC" if eh_sc else "",
         "Classificação": "",
         "Andamento": "",
         "Data Cadastro": datetime.now().strftime("%d/%m/%Y"),
@@ -124,7 +124,7 @@ if st.button("Processar e Organizar Acervos 🚀", type="primary"):
                 eh_sc = res.pop("eh_sc") # Remove a flag de controle
                 
                 if eh_sc:
-                    # 🎯 ESTRUTURA SOM DA ILHA (SC): Muda o nome de "Est/Idioma" para "Est"
+                    # 🎯 ESTRUTURA SOM DA ILHA (SC)
                     dados_sc = {
                         "Música": res["Música"],
                         "Artista": res["Artista"],
@@ -134,7 +134,7 @@ if st.button("Processar e Organizar Acervos 🚀", type="primary"):
                         "Origem": res["Origem"],
                         "Gênero": res["Gênero"],
                         "Gênero Relacionado": res["Gênero Relacionado"],
-                        "Est": "SC", # Coluna Est no lugar certo
+                        "Est": "SC",
                         "Classificação": res["Classificação"],
                         "Andamento": res["Andamento"],
                         "Data Cadastro": res["Data Cadastro"],
@@ -143,7 +143,7 @@ if st.button("Processar e Organizar Acervos 🚀", type="primary"):
                     }
                     lista_sc.append(dados_sc)
                 else:
-                    # 🎯 ESTRUTURA ACERVO GERAL: Mantém a coluna original "Idioma"
+                    # 🎯 ESTRUTURA ACERVO GERAL
                     dados_geral = {
                         "Música": res["Música"],
                         "Artista": res["Artista"],
@@ -180,7 +180,8 @@ if st.button("Processar e Organizar Acervos 🚀", type="primary"):
             st.markdown("👉 *Clique na tabela abaixo, use **Ctrl+A** e **Ctrl+C**, e cole na sua planilha do Som da Ilha.*")
             st.dataframe(df_sc, use_container_width=True)
             
-        if lista_geral or list_sc:
+        # 🎯 CORRIGIDO: Modificado de list_sc para lista_sc para eliminar o erro
+        if lista_geral or lista_sc:
             st.balloons()
         else:
             st.warning("Nenhuma linha válida encontrada no padrão.")
